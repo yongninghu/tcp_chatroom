@@ -6,11 +6,25 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <iostream>
+#include <thread>
+
+int new_socketfd;
 
 void error(const char *msg)
 {
     perror(msg);
     exit(1);
+}
+
+void listen_to_socket() {
+  while(true) {
+    char buffer[255];
+    bzero(buffer,256);
+    int n = read(new_socketfd,buffer,255);
+    if (n < 0) error("ERROR reading from socket");
+    printf("%s",buffer);
+  }
 }
 
 int main(int argc, char *argv[])
@@ -35,8 +49,9 @@ int main(int argc, char *argv[])
 
      serv_addr.sin_family = AF_INET;
 
-     serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+     serv_addr.sin_addr.s_addr = inet_addr("192.168.1.18");
 
+     printf("%d\n",serv_addr.sin_addr.s_addr);
      serv_addr.sin_port = htons(portno);
 
      if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
@@ -54,13 +69,15 @@ int main(int argc, char *argv[])
      printf("server: got connection from %s port %d\n",
             inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
 
-     send(newsockfd, "Hello, world!\n", 13, MSG_DONTROUTE);
-
-     bzero(buffer,256);
-
-     n = read(newsockfd,buffer,255);
-     if (n < 0) error("ERROR reading from socket");
-     printf("Here is the message: %s\n",buffer);
+     new_socketfd = newsockfd;
+     std::thread listen_thread(listen_to_socket);
+     while(true) {
+       bzero(buffer,256);
+       fgets(buffer,255,stdin);
+       n = write(newsockfd, buffer, strlen(buffer));
+       if (n < 0)
+            error("ERROR writing to socket");
+     }
 
      close(newsockfd);
      close(sockfd);

@@ -6,11 +6,26 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <thread>
+
+int write_socket_fd;
 
 void error(const char *msg)
 {
     perror(msg);
     exit(0);
+}
+
+void write_to_socket() {
+  char buffer[256];
+  while (true) {
+    /* code */
+    bzero(buffer,256);
+    fgets(buffer,255,stdin);
+    int n = write(write_socket_fd, buffer, strlen(buffer));
+    if (n < 0)
+         error("ERROR writing to socket");
+  }
 }
 
 int main(int argc, char *argv[])
@@ -41,17 +56,17 @@ int main(int argc, char *argv[])
     serv_addr.sin_port = htons(portno);
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR connecting");
-    printf("Please enter the message: ");
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    n = write(sockfd, buffer, strlen(buffer));
-    if (n < 0)
-         error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd, buffer, 255);
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s\n", buffer);
+
+    write_socket_fd = sockfd;
+
+    std::thread write_thread(write_to_socket);
+    while(true) {
+      bzero(buffer,256);
+      n = read(sockfd, buffer, 255);
+      if (n < 0)
+           error("ERROR reading from socket");
+      printf("%s", buffer);
+    }
     close(sockfd);
     return 0;
 }
