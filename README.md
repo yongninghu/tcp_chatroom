@@ -1,1 +1,1 @@
-tcp chatroom for people that don't want to use skype
+tcp chatroom for people that don't want to use Skype

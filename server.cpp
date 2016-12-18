@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
      serv_addr.sin_family = AF_INET;
 
-     serv_addr.sin_addr.s_addr = inet_addr("192.168.1.18");
+     serv_addr.sin_addr.s_addr = inet_addr("192.168.1.20");
 
      printf("%d\n",serv_addr.sin_addr.s_addr);
      serv_addr.sin_port = htons(portno);
